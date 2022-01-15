@@ -13,25 +13,18 @@ pub struct ChunkType
 
 impl ChunkType
 {
-    fn new(data: &[u8; 4]) -> Result<Self>
+    fn new(data: [u8; 4]) -> Self
     {
-        for &i in data
-        {
-            if !Self::is_valid_byte(i)
-            {
-                bail!("Invalid byte: {}", i);
-            }
-        }
-
-        Ok(Self { data: *data })
+        Self {data}
     }
 
     pub fn bytes(&self) -> [u8; 4]
     {
-        return self.data;
+        self.data.clone()
     }
 
-    pub fn is_valid_byte(byte: u8) -> bool {
+    pub fn is_valid_byte(byte: u8) -> bool
+    {
         byte.is_ascii_lowercase() || byte.is_ascii_uppercase()
     }
 
@@ -68,7 +61,7 @@ impl TryFrom<[u8; 4]> for ChunkType
 
     fn try_from(bytes: [u8; 4]) -> Result<Self>
     {
-        Ok(Self::new(&bytes)?)
+        Ok(Self::new(bytes))
     }
 }
 
@@ -80,7 +73,16 @@ impl FromStr for ChunkType
     fn from_str(str: &str) -> Result<Self>
     {
         let bytes: [u8; 4] = str.as_bytes().try_into()?;
-        Ok(Self::new(&bytes)?)
+
+        for i in bytes
+        {
+            if !Self::is_valid_byte(i)
+            {
+                bail!("Invalid byte: {}", i);
+            }
+        }
+
+        Ok(Self::new(bytes))
     }
 }
 
