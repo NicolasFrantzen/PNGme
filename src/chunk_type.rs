@@ -6,7 +6,7 @@ use std::fmt;
 use anyhow::{Result, Error, bail};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-struct ChunkType
+pub struct ChunkType
 {
     data: [u8; 4],
 }
@@ -32,8 +32,7 @@ impl ChunkType
     }
 
     pub fn is_valid_byte(byte: u8) -> bool {
-        // Is byte A-Za-z?
-        (65 <= byte && byte <= 90) || (97 <= byte && byte <= 122)
+        byte.is_ascii_lowercase() || byte.is_ascii_uppercase()
     }
 
     pub fn is_valid(&self) -> bool
@@ -41,34 +40,24 @@ impl ChunkType
         self.is_reserved_bit_valid()
     }
 
-    fn is_uppercase(byte: u8) -> bool
-    {
-        byte & 0x20 == 0
-    }
-
-    fn is_lowercase(byte: u8) -> bool
-    {
-        byte & 0x20 != 0
-    }
-
     pub fn is_critical(&self) -> bool
     {
-        Self::is_uppercase(self.data[0])
+        self.data[0].is_ascii_uppercase()
     }
 
     pub fn is_public(&self) -> bool
     {
-        Self::is_uppercase(self.data[1])
+        self.data[1].is_ascii_uppercase()
     }
 
     pub fn is_reserved_bit_valid(&self) -> bool
     {
-        Self::is_uppercase(self.data[2])
+        self.data[2].is_ascii_uppercase()
     }
 
     pub fn is_safe_to_copy(&self) -> bool
     {
-        Self::is_lowercase(self.data[3])
+        self.data[3].is_ascii_lowercase()
     }
 }
 
@@ -99,10 +88,10 @@ impl fmt::Display for ChunkType
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
     {
-        let v = self.data.to_vec();
-        let s = String::from_utf8(v).expect("Found invalid UTF-8");
+        let chunk_vec = self.data.to_vec();
+        let chunk_str = String::from_utf8(chunk_vec).expect("Found invalid UTF-8");
 
-        write!(f, "{}", s)
+        write!(f, "{chunk_str}")
     }
 }
 
