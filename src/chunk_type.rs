@@ -1,15 +1,16 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
+
+use anyhow::{Result, Error, bail};
 
 use std::str::FromStr;
 use std::fmt;
-
-use anyhow::{Result, Error, bail};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct ChunkType
 {
     data: [u8; 4],
 }
+
 
 impl ChunkType
 {
@@ -86,6 +87,7 @@ impl FromStr for ChunkType
     }
 }
 
+
 impl fmt::Display for ChunkType
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
@@ -96,6 +98,7 @@ impl fmt::Display for ChunkType
         write!(f, "{chunk_str}")
     }
 }
+
 
 #[cfg(test)]
 mod tests {

@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
 
 use crate::chunk_type::ChunkType;
 use anyhow::{Result, Error, bail};
@@ -37,7 +37,16 @@ impl Chunk
 
     pub fn crc(&self) -> u32
     {
-        crc::crc32::checksum_ieee(&self.as_bytes())
+        let type_and_data: Vec<u8> = self.chunk_type()
+            .bytes()
+            .iter()
+            .cloned()
+            .chain(self.data()
+                .iter()
+                .cloned())
+            .collect();
+
+        crc::crc32::checksum_ieee(&type_and_data[..])
     }
 
     pub fn data_as_string(&self) -> Result<String>
@@ -47,11 +56,21 @@ impl Chunk
 
     pub fn as_bytes(&self) -> Vec<u8>
     {
-        let result: Vec<u8> = self.chunk_type
-            .bytes()
+        let result: Vec<u8> = self.length()
+            .to_be_bytes()
             .iter()
             .cloned()
-            .chain(self.data.iter().cloned())
+            .chain(self.chunk_type
+                .bytes()
+                .iter()
+                .cloned())
+            .chain(self.data
+                .iter()
+                .cloned())
+            .chain(self.crc()
+                .to_be_bytes()
+                .iter()
+                .cloned())
             .collect();
 
         result
@@ -70,14 +89,15 @@ impl TryFrom<&[u8]> for Chunk
         let data_array: &[u8] = &bytes[8..bytes.len() - 4];
         let crc_array: [u8; 4] = bytes[bytes.len() - 4..bytes.len()].try_into()?;
 
-        let length = u32::from_be_bytes(length_array) as usize;
+        let length = u32::from_be_bytes(length_array);
         let chunk_type: ChunkType = ChunkType::try_from(chunk_type_array)?;
         let data_vec: Vec<u8> = data_array.to_vec();
         let crc = u32::from_be_bytes(crc_array);
 
-        if length != data_vec.len()
+        let data_length = data_vec.len() as u32;
+        if length != data_length
         {
-            bail!("Length mismatch")
+            bail!("Length mismatch {length} != {data_length}")
         }
 
         let new_chunk = Self::new(chunk_type, data_vec);

@@ -1,15 +1,20 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
 
 use crate::chunk::Chunk;
+
 use anyhow::{Result, Error, bail};
 
 use std::fmt;
+use std::io;
+use std::io::prelude::*;
+
 
 #[derive(Debug)]
 pub struct Png
 {
     chunks: Vec<Chunk>,
 }
+
 
 impl Png
 {
@@ -70,7 +75,9 @@ impl Png
         self.header()
             .iter()
             .cloned()
-            .chain(self.chunks().iter().flat_map(|f| f.as_bytes()))
+            .chain(self.chunks()
+                .iter()
+                .flat_map(|f| f.as_bytes()))
             .collect()
     }
 }
@@ -82,7 +89,62 @@ impl TryFrom<&[u8]> for Png
 
     fn try_from(bytes: &[u8]) -> Result<Self>
     {
-        todo!()
+        let mut chunks: Vec<Chunk> = vec![];
+
+        let mut reader = io::BufReader::new(bytes);
+        let mut header_buffer: [u8; 8] = [0; 8];
+
+        reader.read_exact(&mut header_buffer)?;
+
+        if header_buffer != Self::STANDARD_HEADER
+        {
+            bail!("Header mismatch")
+        }
+
+        loop
+        {
+            /* Read chunk:
+               Length 4 byte
+               ChunkType 4 byte
+               ChunkData Length byte
+               CRC 4 byte */
+
+            let mut data_length_buffer: [u8; 4] = [0; 4];
+            match reader.read_exact(&mut data_length_buffer)
+            {
+                Ok(_) => (),
+                Err(e) => if e.kind() == io::ErrorKind::UnexpectedEof { break } // We have reached end of PNG buffer
+            }
+            let data_length = u32::from_be_bytes(data_length_buffer);
+
+            let mut chunk_type_buffer: [u8; 4] = [0; 4];
+            reader.read_exact(&mut chunk_type_buffer)?;
+
+            let mut data_buffer = vec![0u8; data_length as usize];
+            reader.read_exact(&mut data_buffer)?;
+
+            let mut crc_buffer: [u8; 4] = [0; 4];
+            reader.read_exact(&mut crc_buffer)?;
+
+            let whole: Vec<u8> = data_length_buffer
+                .iter()
+                .cloned()
+                .chain(chunk_type_buffer
+                    .iter()
+                    .cloned())
+                .chain(data_buffer
+                    .iter()
+                    .cloned())
+                .chain(crc_buffer
+                    .iter()
+                    .cloned())
+                .collect();
+
+            let chunk = Chunk::try_from(&whole[..])?;
+            chunks.push(chunk)
+        }
+
+        Ok(Png::new(chunks))
     }
 }
 
