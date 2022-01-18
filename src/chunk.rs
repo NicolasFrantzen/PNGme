@@ -1,51 +1,31 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
 
 use crate::chunk_type::ChunkType;
-
 use anyhow::{Result, Error, bail};
-
 use std::fmt;
 
 
-struct Chunk
+#[derive(Debug, Clone)]
+pub struct Chunk
 {
-    length: u32,
     chunk_type: ChunkType,
     data: Vec<u8>,
-    crc: u32,
 }
 
 
 impl Chunk
 {
-    fn new(data: &[u8]) -> Result<Self>
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Self
     {
-        let length_array: [u8; 4] = data[0..4].try_into()?;
-        let chunk_type_array: [u8; 4] = data[4..8].try_into()?;
-        let data_array: &[u8] = &data[8..data.len() - 4];
-        let crc_array: [u8; 4] = data[data.len() - 4..data.len()].try_into()?;
-
-        let length = u32::from_be_bytes(length_array);
-        let chunk_type: ChunkType = ChunkType::try_from(chunk_type_array)?;
-        let data_vec: Vec<u8> = data_array.to_vec();
-        let crc = u32::from_be_bytes(crc_array);
-
-        let new_chunk = Self {length, chunk_type, data: data_vec, crc};
-
-        if crc != new_chunk.crc()
-        {
-            bail!("Invalid CRC")
-        }
-
-        Ok(new_chunk)
+        Chunk {chunk_type, data}
     }
 
-    fn length(&self) -> u32
+    pub fn length(&self) -> u32
     {
-        self.length
+        self.data.len() as u32
     }
 
-    fn chunk_type(&self) -> &ChunkType
+    pub fn chunk_type(&self) -> &ChunkType
     {
         &self.chunk_type
     }
@@ -55,23 +35,42 @@ impl Chunk
         &self.data
     }
 
-    fn crc(&self) -> u32
+    pub fn crc(&self) -> u32
     {
-        crc::crc32::checksum_ieee(&self.as_bytes())
+        let type_and_data: Vec<u8> = self.chunk_type()
+            .bytes()
+            .iter()
+            .cloned()
+            .chain(self.data()
+                .iter()
+                .cloned())
+            .collect();
+
+        crc::crc32::checksum_ieee(&type_and_data[..])
     }
 
-    fn data_as_string(&self) -> Result<String>
+    pub fn data_as_string(&self) -> Result<String>
     {
         Ok(String::from_utf8(self.data.clone())?)
     }
 
-    fn as_bytes(&self) -> Vec<u8>
+    pub fn as_bytes(&self) -> Vec<u8>
     {
-        let result: Vec<u8> = self.chunk_type
-            .bytes()
+        let result: Vec<u8> = self.length()
+            .to_be_bytes()
             .iter()
             .cloned()
-            .chain(self.data.iter().cloned())
+            .chain(self.chunk_type
+                .bytes()
+                .iter()
+                .cloned())
+            .chain(self.data
+                .iter()
+                .cloned())
+            .chain(self.crc()
+                .to_be_bytes()
+                .iter()
+                .cloned())
             .collect();
 
         result
@@ -85,7 +84,30 @@ impl TryFrom<&[u8]> for Chunk
 
     fn try_from(bytes: &[u8]) -> Result<Self>
     {
-        Ok(Self::new(&bytes)?)
+        let length_array: [u8; 4] = bytes[0..4].try_into()?;
+        let chunk_type_array: [u8; 4] = bytes[4..8].try_into()?;
+        let data_array: &[u8] = &bytes[8..bytes.len() - 4];
+        let crc_array: [u8; 4] = bytes[bytes.len() - 4..bytes.len()].try_into()?;
+
+        let length = u32::from_be_bytes(length_array);
+        let chunk_type: ChunkType = ChunkType::try_from(chunk_type_array)?;
+        let data_vec: Vec<u8> = data_array.to_vec();
+        let crc = u32::from_be_bytes(crc_array);
+
+        let data_length = data_vec.len() as u32;
+        if length != data_length
+        {
+            bail!("Length mismatch {length} != {data_length}")
+        }
+
+        let new_chunk = Self::new(chunk_type, data_vec);
+
+        if crc != new_chunk.crc()
+        {
+            bail!("Invalid CRC")
+        }
+
+        Ok(new_chunk)
     }
 }
 
@@ -108,8 +130,8 @@ impl fmt::Display for Chunk
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
-    use std::str::FromStr;
+    //use crate::chunk_type::ChunkType;
+    //use std::str::FromStr;
 
     fn testing_chunk() -> Chunk {
         let data_length: u32 = 42;

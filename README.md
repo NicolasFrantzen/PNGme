@@ -1,4 +1,4 @@
 # PNGme
-My implementation of https://picklenerd.github.io/pngme_book/setup.html
+My implementation of https://picklenerd.github.io/pngme_book/
 
-This is purely for learning purposes an to explore the Rust language.
+This is purely for learning purposes and to explore the Rust language.
