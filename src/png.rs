@@ -77,6 +77,7 @@ impl Png
             .cloned()
             .chain(self.chunks()
                 .iter()
+                .cloned()
                 .flat_map(|f| f.as_bytes()))
             .collect()
     }
