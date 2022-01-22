@@ -1,12 +1,31 @@
-use anyhow::Result;
-
+use args::PngMeArgs;
 mod args;
-mod chunk;
-mod chunk_type;
-mod commands;
-mod png;
+
+use anyhow::Result;
+use clap::{AppSettings, Parser};
 
 
-fn main() -> Result<()> {
-    todo!()
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+#[clap(global_setting(AppSettings::PropagateVersion))]
+#[clap(global_setting(AppSettings::UseLongFormatForHelpSubcommand))]
+struct Cli {
+    #[clap(subcommand)]
+    command: PngMeArgs,
+}
+
+
+fn main() -> Result<()>
+{
+    let _cli = Cli::parse();
+
+    // You can check for the existence of subcommands, and if found use their
+    // matches just as you would the top level app
+    /*match &cli.command {
+        Commands::Add { name } => {
+            println!("'myapp add' was used, name is: {:?}", name)
+        }
+    }*/
+
+    Ok(())
 }
