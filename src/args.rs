@@ -4,19 +4,19 @@ use clap::{Subcommand, Args, AppSettings};
 #[derive(Subcommand)]
 pub enum PngMeArgs
 {
-    /// Encode a message
+    /// Encode a message in a PNG file
     #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Encode(EncodeArgs),
 
-    /// Decode a message
+    /// Decode a message from a PNG file
     #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Decode(DecodeArgs),
 
-    /// Remove a message
+    /// Remove a message from a PNG file
     #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Remove(RemoveArgs),
 
-    /// Display a message
+    /// Display all chunks in a PNG file
     #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Print(PrintArgs),
 }

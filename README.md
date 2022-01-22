@@ -13,8 +13,8 @@ This is purely for learning purposes and to explore the Rust language.
         -V, --version    Print version information
 
     SUBCOMMANDS:
-        decode    Decode a message
-        encode    Encode a message
+        decode    Decode a message from a PNG file
+        encode    Encode a message in a PNG file
         help      Print this message or the help of the given subcommand(s)
-        print     Display a message
-        remove    Remove a message
+        print     Display all chunks in a PNG file
+        remove    Remove a message from a PNG file
