@@ -1,10 +1,11 @@
-use args::PngMeArgs;
-mod args;
+use pngme::commands;
+use pngme::args::PngMeArgs;
 
 use anyhow::Result;
 use clap::{AppSettings, Parser};
 
 
+/// Encode a super secret message in a PNG!
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 #[clap(global_setting(AppSettings::PropagateVersion))]
@@ -17,15 +18,22 @@ struct Cli {
 
 fn main() -> Result<()>
 {
-    let _cli = Cli::parse();
+    let cli = Cli::parse();
 
-    // You can check for the existence of subcommands, and if found use their
-    // matches just as you would the top level app
-    /*match &cli.command {
-        Commands::Add { name } => {
-            println!("'myapp add' was used, name is: {:?}", name)
+    match &cli.command {
+        PngMeArgs::Encode(args) => {
+            commands::encode(args)?;
         }
-    }*/
+        PngMeArgs::Decode(args) => {
+            commands::decode(args)?;
+        }
+        PngMeArgs::Remove(args) => {
+            commands::remove(args)?;
+        }
+        PngMeArgs::Print(args) => {
+            commands::print_chunks(args)?;
+        }
+    }
 
     Ok(())
 }

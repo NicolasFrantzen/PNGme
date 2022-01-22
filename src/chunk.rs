@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::chunk_type::ChunkType;
 use anyhow::{Result, Error, bail};
 use std::fmt;
