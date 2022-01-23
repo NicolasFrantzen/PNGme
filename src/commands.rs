@@ -2,36 +2,12 @@ use crate::args::{DecodeArgs, EncodeArgs, PrintArgs, RemoveArgs};
 use crate::png::Png;
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
+use crate::encdec;
 
 use anyhow::{Result, bail};
-use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
 use std::fs;
 use std::str::FromStr;
-
-mod encdec
-{
-    use super::*;
-
-    pub fn encrypt_message(key: &str, message: &str) -> String
-    {
-        let mc = new_magic_crypt!(key, 256);
-        let base64 = mc.encrypt_str_to_base64(message);
-
-        base64
-    }
-
-
-    pub fn decrypt_message(key: &str, base64: &str) -> Result<String>
-    {
-        let mc = new_magic_crypt!(key, 256);
-        match mc.decrypt_base64_to_string(&base64)
-        {
-            Ok(message) => Ok(message),
-            Err(_) => bail!("Failed to decrypt message. Maybe the key was wrong?")
-        }
-    }
-}
 
 
 /// Encodes a message into a PNG file and saves the result
